@@ -56,7 +56,7 @@ async function fetchFirecrawlReviews(url: string, source: string = "generic"): P
       }
     } else if (source === "amazon") {
       // Amazon reviews: extract review paragraphs with star ratings
-      const lines = markdown.split(/\n/).filter(l => l.trim().length > 20);
+      const lines = markdown.split(/\n/).filter((l: string) => l.trim().length > 20);
       for (let i = 0; i < lines.length - 1; i++) {
         if (reviews.length >= 12) break;
         const line = lines[i];
