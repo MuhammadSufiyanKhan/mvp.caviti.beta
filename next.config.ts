@@ -58,26 +58,15 @@ const nextConfig: NextConfig = {
     return [];
   },
 
-  // Webpack optimization
-  webpack: (config, { dev }) => {
-    if (!dev) {
-      config.optimization = {
-        ...config.optimization,
-        usedExports: true,
-        sideEffects: true,
-      };
-    }
-    return config;
-  },
+  // Turbopack configuration (Next.js 16 default)
+  turbopack: {},
 
-  experimental: {
-    serverComponentsExternalPackages: ["@supabase/supabase-js"],
-  },
+  // Server components external packages
+  serverExternalPackages: ["@supabase/supabase-js"],
 
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
   compress: true,
-  swcMinify: true,
 };
 
 export default nextConfig;
