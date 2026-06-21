@@ -623,8 +623,9 @@ export default function ReportDetailPage() {
           </div>
         </motion.div>
 
-        {/* Product Vulnerabilities - First Section */}
+        {/* Three-Column Grid: Product Vulnerabilities, Factory Instruction Manual, Ads & Creative Hooks */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+          {/* Product Vulnerabilities */}
           {sections.length > 0 && (
             <PillarCard
               key={sections[0].pillar}
@@ -638,9 +639,48 @@ export default function ReportDetailPage() {
               subscriptionStatus={subscriptionStatus}
             />
           )}
+          
+          {/* Factory Instruction Manual & Ads & Creative Hooks */}
+          {sections.slice(1).map((s) => (
+            <motion.div
+              key={s.pillar}
+              whileHover={{ y: -3 }}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/2.5 border border-white/7 rounded-2xl overflow-hidden backdrop-blur-2xl shadow-lg"
+            >
+              <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-white/5 bg-gradient-to-r from-blue-500/6 to-transparent flex items-center gap-4" style={{ backgroundImage: `linear-gradient(to right, ${s.theme.color}15, transparent)` }}>
+                <div className="flex-shrink-0 w-10 sm:w-12 h-10 sm:h-12 rounded-xl border flex items-center justify-center" style={{ backgroundColor: `${s.theme.color}15`, borderColor: `${s.theme.color}25` }}>
+                  <s.icon size={20} style={{ color: s.theme.color }} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-base sm:text-lg font-black mb-1">
+                    {s.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    {s.subtitle}
+                  </p>
+                </div>
+              </div>
+              <div className="px-6 sm:px-8 py-8 sm:py-10 flex items-center justify-center min-h-32">
+                <div className="text-center">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-400 mb-2">
+                    🚀
+                  </div>
+                  <p className="text-sm sm:text-base text-slate-400 font-semibold">
+                    Coming Soon
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Available in the next update
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Complaint Themes Section - Verbatim Quotes from Real Reviews - Directly after Product Vulnerabilities and before Factory Instruction Manual */}
+        {/* Complaint Themes Section - Verbatim Quotes from Real Reviews - After all three sections */}
         {complaintThemesLoading ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -721,46 +761,7 @@ export default function ReportDetailPage() {
           );
         })()}
 
-        {/* Coming Soon Sections - Factory Instruction Manual & Ads & Creative Hooks */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {sections.slice(1).map((s) => (
-            <motion.div
-              key={s.pillar}
-              whileHover={{ y: -3 }}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white/2.5 border border-white/7 rounded-2xl overflow-hidden backdrop-blur-2xl shadow-lg"
-            >
-              <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-white/5 bg-gradient-to-r from-blue-500/6 to-transparent flex items-center gap-4">
-                <div className="flex-shrink-0 w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center">
-                  <s.icon size={20} className="text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-base sm:text-lg font-black mb-1">
-                    {s.title}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-500">
-                    {s.subtitle}
-                  </p>
-                </div>
-              </div>
-              <div className="px-6 sm:px-8 py-8 sm:py-10 flex items-center justify-center min-h-32">
-                <div className="text-center">
-                  <div className="text-2xl sm:text-3xl font-black text-slate-400 mb-2">
-                    🚀
-                  </div>
-                  <p className="text-sm sm:text-base text-slate-400 font-semibold">
-                    Coming Soon
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Available in the next update
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+
 
         <motion.div
           initial={{ opacity: 0 }}
