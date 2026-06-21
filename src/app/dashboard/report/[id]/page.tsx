@@ -17,11 +17,13 @@ import {
   ArrowLeft,
   Calendar,
   ExternalLink,
+  Loader2,
   Rocket,
   TrendingUp,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { parseSection } from "@/lib/report-metrics";
+import UserMenu from "@/components/UserMenu";
 import type { Database } from "@/types/database.types";
 
 type Report = Database["public"]["Tables"]["reports"]["Row"];
@@ -286,7 +288,21 @@ export default function ReportDetailPage() {
 
   const [isPro, setIsPro] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>("Loading...");
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setIsAuthenticated(true);
+    };
+    checkAuth();
+  }, [supabase, router]);
 
   const fetchReport = useCallback(async () => {
     if (!id) return;
@@ -352,6 +368,7 @@ export default function ReportDetailPage() {
   const shouldBlurGlobal = !subscriptionLoading && !isPro;
 
   const [marketDataWithReviews, setMarketDataWithReviews] = useState<any>(null);
+  const [complaintThemesLoading, setComplaintThemesLoading] = useState(true);
 
   const analysisText = (report?.market_data as any)?.analysis || "";
   const marketData = report?.market_data as any;
@@ -361,6 +378,7 @@ export default function ReportDetailPage() {
     if (!report) return;
 
     const enrichData = async () => {
+      setComplaintThemesLoading(true);
       let enrichedMarketData = { ...marketData };
 
       // If complaint_themes is missing, try to fetch them (for old reports)
@@ -390,6 +408,7 @@ export default function ReportDetailPage() {
       }
 
       setMarketDataWithReviews(enrichedMarketData);
+      setComplaintThemesLoading(false);
     };
 
     enrichData();
@@ -417,10 +436,10 @@ export default function ReportDetailPage() {
           "Exact technical specs to send to Alibaba supplier (copy-paste ready)",
         icon: TrendingUp,
         theme: {
-          color: "#3b82f6",
-          glow: "rgba(59,130,246,0.06)",
-          border: "rgba(59,130,246,0.15)",
-          accent: "rgba(59,130,246,0.1)",
+          color: "#10b981",
+          glow: "rgba(16,185,129,0.06)",
+          border: "rgba(16,185,129,0.15)",
+          accent: "rgba(16,185,129,0.1)",
         },
         items: parseSection(analysisText, "MARKET GAPS"),
       },
@@ -440,6 +459,32 @@ export default function ReportDetailPage() {
     ],
     [analysisText]
   );
+
+  if (!isAuthenticated) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#050508",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: "44px",
+            height: "44px",
+            borderRadius: "50%",
+            border: "3px solid rgba(59,130,246,0.15)",
+            borderTop: "3px solid #3b82f6",
+            animation: "spin 1s linear infinite",
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (fetching) {
     return (
@@ -510,46 +555,16 @@ export default function ReportDetailPage() {
       </div>
 
       {/* Header */}
-      <header
-        style={{
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(5,5,8,0.85)",
-          backdropFilter: "blur(24px)",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1100px",
-            margin: "0 auto",
-            padding: "0 24px",
-            height: "64px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+      <header className="sticky top-0 z-50 border-b border-white/6 bg-black/85 backdrop-blur-2xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4 sm:gap-5">
             <button
               onClick={() => router.push("/dashboard")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                color: "#475569",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "10px",
-                padding: "8px 14px",
-                cursor: "pointer",
-                fontSize: "13px",
-              }}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm text-slate-500 bg-white/4 border border-white/6 hover:bg-white/8 transition-colors cursor-pointer"
             >
               <ArrowLeft size={14} /> Back
             </button>
-            <span style={{ color: "rgba(255,255,255,0.08)" }}>|</span>
+            <span className="text-white/8 hidden sm:inline">|</span>
             <div className="flex items-center gap-2">
               <Image
                 src="/logo.png"
@@ -558,64 +573,30 @@ export default function ReportDetailPage() {
                 height={20}
                 className="rounded-full"
               />
-              <span className="text-white font-bold text-xl">caviti</span>
+              <span className="text-white font-bold text-lg sm:text-xl">caviti</span>
             </div>
           </div>
-          <span
-            style={{
-              fontSize: "12px",
-              color: "#10b981",
-              background: "rgba(16,185,129,0.08)",
-              border: "1px solid rgba(16,185,129,0.15)",
-              padding: "6px 14px",
-              borderRadius: "100px",
-            }}
-          >
-            {shouldBlurGlobal ? `Status: ${subscriptionStatus}` : "✓ Analysis Complete"}
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-emerald-500/8 border border-emerald-500/15 text-emerald-400">
+              {shouldBlurGlobal ? `Status: ${subscriptionStatus}` : "✓ Complete"}
+            </span>
+            <UserMenu />
+          </div>
         </div>
       </header>
 
-      <main
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "48px 24px",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
+      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: "28px" }}
+          className="mb-6 sm:mb-8"
         >
-          <h1
-            style={{
-              fontSize: "clamp(32px, 5vw, 56px)",
-              fontWeight: 900,
-              letterSpacing: "-2px",
-              marginBottom: "10px",
-              textTransform: "capitalize",
-            }}
-          >
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black -tracking-wider mb-4 capitalize">
             {report.product_name}
           </h1>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <span
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "13px",
-                color: "#475569",
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                padding: "6px 14px",
-                borderRadius: "8px",
-              }}
-            >
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg text-slate-500 bg-white/3 border border-white/6">
               <Calendar size={12} />
               {new Date(report.created_at).toLocaleDateString(undefined, {
                 year: "numeric",
@@ -629,175 +610,105 @@ export default function ReportDetailPage() {
                 href={marketData.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "13px",
-                  color: "#60a5fa",
-                  background: "rgba(59,130,246,0.06)",
-                  border: "1px solid rgba(59,130,246,0.15)",
-                  padding: "6px 14px",
-                  borderRadius: "8px",
-                  textDecoration: "none",
-                }}
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg text-blue-400 bg-blue-500/6 border border-blue-500/15 hover:bg-blue-500/10 transition-colors no-underline"
               >
                 <ExternalLink size={12} />
-                {String(marketData.url)
-                  .replace(/^https?:\/\//, "")
-                  .slice(0, 50)}
+                <span className="truncate">
+                  {String(marketData.url)
+                    .replace(/^https?:\/\//, "")
+                    .slice(0, 50)}
+                </span>
               </a>
             ) : null}
           </div>
         </motion.div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "16px",
-          }}
-        >
-          {sections.map((s) => (
+        {/* Product Vulnerabilities - First Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+          {sections.length > 0 && (
             <PillarCard
-              key={s.pillar}
-              pillar={s.pillar}
-              title={s.title}
-              subtitle={s.subtitle}
-              icon={s.icon}
-              theme={s.theme}
-              items={s.items}
+              key={sections[0].pillar}
+              pillar={sections[0].pillar}
+              title={sections[0].title}
+              subtitle={sections[0].subtitle}
+              icon={sections[0].icon}
+              theme={sections[0].theme}
+              items={sections[0].items}
               shouldBlurGlobal={shouldBlurGlobal}
               subscriptionStatus={subscriptionStatus}
             />
-          ))}
+          )}
         </div>
 
-        {/* Complaint Themes Section - Verbatim Quotes from Real Reviews */}
-        {(marketDataWithReviews || marketData)?.complaint_themes && (marketDataWithReviews || marketData).complaint_themes.length > 0 && (() => {
+        {/* Complaint Themes Section - Verbatim Quotes from Real Reviews - Directly after Product Vulnerabilities and before Factory Instruction Manual */}
+        {complaintThemesLoading ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-6 sm:mb-8 bg-white/2.5 border border-white/7 rounded-2xl overflow-hidden backdrop-blur-2xl shadow-lg p-6 sm:p-8"
+          >
+            <div className="flex flex-col items-center justify-center gap-4 py-12">
+              <Loader2 size={40} className="animate-spin text-blue-400" />
+              <p className="text-sm sm:text-base text-slate-400">Loading customer complaints...</p>
+            </div>
+          </motion.div>
+        ) : (marketDataWithReviews || marketData)?.complaint_themes && (marketDataWithReviews || marketData).complaint_themes.length > 0 && (() => {
           const themes = (marketDataWithReviews || marketData).complaint_themes;
           return (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              style={{
-                marginTop: "36px",
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: "22px",
-                overflow: "hidden",
-                backdropFilter: "blur(20px)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-              }}
+              className="mb-6 sm:mb-8 bg-white/2.5 border border-white/7 rounded-2xl overflow-hidden backdrop-blur-2xl shadow-lg"
             >
               {/* Header */}
-              <div
-                style={{
-                  padding: "22px 28px",
-                  borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  background: "linear-gradient(135deg, rgba(239,68,68,0.06), transparent)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "13px",
-                    background: "rgba(239,68,68,0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid rgba(239,68,68,0.15)",
-                  }}
-                >
-                  <span style={{ fontSize: "20px" }}>⭐</span>
+              <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-white/5 bg-gradient-to-r from-red-500/6 to-transparent flex items-center gap-4">
+                <div className="flex-shrink-0 w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-red-500/10 border border-red-500/15 flex items-center justify-center">
+                  <span className="text-lg sm:text-xl">⭐</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h2
-                    style={{
-                      fontSize: "17px",
-                      fontWeight: 800,
-                      marginBottom: "3px",
-                    }}
-                  >
+                <div className="flex-1">
+                  <h2 className="text-base sm:text-lg font-black mb-1">
                     What Customers Are Complaining About
                   </h2>
-                  <p style={{ fontSize: "13px", color: "#475569" }}>
+                  <p className="text-xs sm:text-sm text-slate-500">
                     Grouped by complaint theme with real customer quotes
                   </p>
                 </div>
               </div>
 
               {/* Complaint Themes */}
-              <div
-                style={{
-                  padding: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                }}
-              >
+              <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6">
                 {themes.map((theme: any, idx: number) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 + idx * 0.08 }}
-                    style={{
-                      paddingBottom: "20px",
-                      borderBottom: idx < themes.length - 1 ? "1px solid rgba(239,68,68,0.1)" : "none",
-                    }}
+                    className={`pb-6 ${idx < themes.length - 1 ? "border-b border-red-500/10" : ""}`}
                   >
                     {/* Theme Header with count */}
-                    <div style={{ marginBottom: "14px" }}>
-                      <h3
-                        style={{
-                          fontSize: "15px",
-                          fontWeight: 900,
-                          margin: 0,
-                          marginBottom: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span style={{ fontSize: "16px" }}>{theme.emoji || "🔴"}</span>
+                    <div className="mb-4">
+                      <h3 className="text-sm sm:text-base font-black mb-2 flex items-center gap-2 flex-wrap">
+                        <span className="text-base sm:text-lg">{theme.emoji || "🔴"}</span>
                         <span>{theme.theme}</span>
-                        <span style={{ color: "#f87171", fontSize: "14px" }}>
+                        <span className="text-red-300 text-xs sm:text-sm">
                           — {theme.mentions} mentions
                         </span>
                       </h3>
                       {theme.description && (
-                        <p style={{
-                          fontSize: "13px",
-                          color: "#cbd5e1",
-                          margin: "6px 0 0 0",
-                          lineHeight: "1.4"
-                        }}>
+                        <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
                           {theme.description}
                         </p>
                       )}
                     </div>
 
                     {/* Verbatim Quotes */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div className="flex flex-col gap-3">
                       {(theme.quotes || []).map((quote: string, qIdx: number) => (
                         <div
                           key={qIdx}
-                          style={{
-                            padding: "12px 14px",
-                            background: "rgba(239,68,68,0.05)",
-                            borderLeft: "3px solid rgba(239,68,68,0.3)",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            color: "#e2e8f0",
-                            fontStyle: "italic",
-                            lineHeight: "1.5",
-                          }}
+                          className="px-3 sm:px-4 py-3 sm:py-4 bg-red-500/5 border-l-3 border-red-500/30 rounded text-xs sm:text-sm text-slate-200 italic leading-relaxed"
                         >
                           "{quote}"
                         </div>
@@ -810,26 +721,56 @@ export default function ReportDetailPage() {
           );
         })()}
 
+        {/* Coming Soon Sections - Factory Instruction Manual & Ads & Creative Hooks */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {sections.slice(1).map((s) => (
+            <motion.div
+              key={s.pillar}
+              whileHover={{ y: -3 }}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/2.5 border border-white/7 rounded-2xl overflow-hidden backdrop-blur-2xl shadow-lg"
+            >
+              <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-white/5 bg-gradient-to-r from-blue-500/6 to-transparent flex items-center gap-4">
+                <div className="flex-shrink-0 w-10 sm:w-12 h-10 sm:h-12 rounded-xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center">
+                  <s.icon size={20} className="text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-base sm:text-lg font-black mb-1">
+                    {s.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    {s.subtitle}
+                  </p>
+                </div>
+              </div>
+              <div className="px-6 sm:px-8 py-8 sm:py-10 flex items-center justify-center min-h-32">
+                <div className="text-center">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-400 mb-2">
+                    🚀
+                  </div>
+                  <p className="text-sm sm:text-base text-slate-400 font-semibold">
+                    Coming Soon
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Available in the next update
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          style={{ marginTop: "28px", textAlign: "center" }}
+          className="mt-8 sm:mt-10 text-center"
         >
           <Link
             href="/dashboard"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              color: "#475569",
-              fontSize: "14px",
-              textDecoration: "none",
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              padding: "13px 36px",
-              borderRadius: "14px",
-            }}
+            className="inline-flex items-center gap-2 px-6 sm:px-9 py-3 sm:py-4 rounded-2xl text-sm sm:text-base text-slate-500 bg-white/3 border border-white/7 hover:bg-white/5 transition-colors no-underline"
           >
             ← Back to Dashboard
           </Link>

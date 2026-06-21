@@ -6,8 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
-import { Activity, BarChart3, Target, CheckCircle2, Trash2, ExternalLink, Search, ChevronRight } from "lucide-react";
+import { Activity, BarChart3, Target, CheckCircle2, Trash2, ExternalLink, Search, ChevronRight, Loader2 } from "lucide-react";
 import { AnalysisLoader } from "@/components/dashboard/AnalysisLoader";
+import UserMenu from "@/components/UserMenu";
 import type { Database } from "@/types/database.types";
 
 type Report = Database["public"]["Tables"]["reports"]["Row"];
@@ -19,10 +20,25 @@ export default function DashboardPage() {
   const [url, setUrl] = useState("");
   const [reports, setReports] = useState<Report[]>([]);
   const [remainingTrials, setRemainingTrials] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const router = useRouter();
   const supabase = createClient();
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setIsAuthenticated(true);
+      fetchDashboardData();
+    };
+    checkAuth();
+  }, [supabase, router]);
 
   const fetchDashboardData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -98,55 +114,69 @@ export default function DashboardPage() {
     run();
   }, [fetchDashboardData]);
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-slate-400">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A0A", color: "#E5E7EB", fontFamily: "var(--font-geist-sans)" }}>
-
+    <div className="min-h-screen bg-[#0A0A0A] text-[#E5E7EB] font-sans">
       {/* Background */}
-      <div style={{ position: "fixed", inset: 0, background: "radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.07) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(99,102,241,0.06) 0%, transparent 50%)", pointerEvents: "none" }} />
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5 pointer-events-none" />
 
       {/* Header */}
-      <header style={{ borderBottom: "1px solid rgba(31,41,55,1)", background: "rgba(10,10,10,0.78)", backdropFilter: "blur(24px)", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <div className="flex items-center gap-2">
+      <header className="border-b border-[#1F2937] bg-[#0A0A0A]/78 backdrop-blur-xl sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <Image
                 src="/logo.png"
                 alt="Caviti Logo"
                 width={20}
                 height={20}
-                className="rounded-full"
+                className="rounded-full flex-shrink-0"
               />
-              <span className="text-white font-bold text-xl">caviti</span>
+              <span className="text-white font-bold text-lg sm:text-xl truncate">caviti</span>
             </div>
-            <span style={{ color: "rgba(229,231,235,0.12)" }}>/</span>
-            <span style={{ fontSize: "13px", color: "#A1A1AA", background: "rgba(17,17,17,0.6)", border: "1px solid rgba(31,41,55,1)", padding: "4px 12px", borderRadius: "8px" }}>Dashboard</span>
+            <span className="hidden sm:inline text-[#333]">/</span>
+            <span className="hidden sm:inline text-xs sm:text-sm text-[#A1A1AA] bg-[#111] border border-[#1F2937] px-3 py-1 rounded-lg truncate">Dashboard</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px", fontSize: "14px" }}>
-            <Link href="/dashboard" style={{ color: "#E5E7EB", textDecoration: "none", fontWeight: 600 }}>Overview</Link>
-            <Link href="/dashboard/billing" style={{ color: "#A1A1AA", textDecoration: "none" }}>Billing</Link>
-            <Link href="/" style={{ color: "#A1A1AA", textDecoration: "none" }}>Home</Link>
+          <div className="hidden sm:flex items-center gap-6 sm:gap-8 text-sm">
+            <Link href="/dashboard" className="text-[#E5E7EB] font-semibold hover:text-white transition">Overview</Link>
+            <Link href="/dashboard/billing" className="text-[#A1A1AA] hover:text-[#E5E7EB] transition">Billing</Link>
+            <Link href="/" className="text-[#A1A1AA] hover:text-[#E5E7EB] transition">Home</Link>
+          </div>
+          <div>
+            <UserMenu />
           </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px", position: "relative", zIndex: 10 }}>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 relative z-10">
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "28px" }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
           {[
             { title: "Trials Remaining", value: String(remainingTrials), icon: Activity, color: "#3b82f6", glow: "rgba(59,130,246,0.15)" },
             { title: "Total Reports", value: String(reports.length), icon: BarChart3, color: "#8b5cf6", glow: "rgba(139,92,246,0.15)" },
             { title: "Gaps Identified", value: reports.length > 0 ? `${reports.length * 5}+` : "—", icon: Target, color: "#10b981", glow: "rgba(16,185,129,0.15)" },
           ].map((stat, i) => (
             <motion.div key={i} whileHover={{ y: -3, scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }}
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", padding: "24px", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "18px" }}>
-              <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: stat.glow, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${stat.color}25` }}>
-                <stat.icon size={22} color={stat.color} />
-              </div>
-              <div>
-                <p style={{ fontSize: "12px", color: "#475569", marginBottom: "6px", fontWeight: 500 }}>{stat.title}</p>
-                <p style={{ fontSize: "28px", fontWeight: 800, letterSpacing: "-1px" }}>{stat.value}</p>
+              className="bg-[#111]/60 border border-[#1F2937] rounded-lg sm:rounded-xl p-4 sm:p-6 backdrop-blur-xl hover:border-[#333] transition">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg border flex items-center justify-center flex-shrink-0" style={{ background: stat.glow, borderColor: `${stat.color}40` }}>
+                  <stat.icon size={24} color={stat.color} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-[#475569] font-medium">{stat.title}</p>
+                  <p className="text-xl sm:text-2xl font-bold mt-1 truncate">{stat.value}</p>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -154,14 +184,14 @@ export default function DashboardPage() {
 
         {/* Search Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "24px", padding: "36px", marginBottom: "28px", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
-          <div style={{ marginBottom: "24px" }}>
-            <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "6px" }}>Analyze Competitor or Product</h2>
-            <p style={{ fontSize: "14px", color: "#475569" }}>Enter a product name or competitor URL to get real market insights</p>
+          className="bg-[#111]/60 border border-[#1F2937] rounded-lg sm:rounded-2xl p-4 sm:p-8 mb-8 backdrop-blur-xl hover:border-[#333] transition">
+          <div className="mb-6">
+            <h2 className="text-lg sm:text-2xl font-bold mb-2">Analyze Competitor or Product</h2>
+            <p className="text-sm sm:text-base text-[#475569]">Enter a product name or competitor URL to get real market insights</p>
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <div style={{ flex: 1, position: "relative" }}>
-              <Search size={15} style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "#475569" }} />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569]" />
               <input
                 type="text"
                 placeholder="https://competitor.com or product name..."
@@ -169,94 +199,107 @@ export default function DashboardPage() {
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !loading && handleAnalyze()}
                 disabled={loading}
-                style={{ width: "100%", paddingLeft: "44px", paddingRight: "16px", paddingTop: "15px", paddingBottom: "15px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", color: "white", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
-                onFocus={(e) => e.target.style.borderColor = "rgba(59,130,246,0.4)"}
-                onBlur={(e) => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+                className="w-full pl-12 pr-4 py-3 sm:py-4 bg-[#0A0A0A] border border-[#1F2937] rounded-lg focus:border-blue-500/40 focus:outline-none text-sm sm:text-base text-white placeholder-[#475569] disabled:opacity-50 transition"
               />
             </div>
             <button
               onClick={handleAnalyze}
               disabled={loading || remainingTrials === 0}
-              style={{ background: loading ? "rgba(59,130,246,0.5)" : "linear-gradient(135deg, #3b82f6, #6366f1)", color: "white", padding: "15px 32px", borderRadius: "14px", fontSize: "14px", fontWeight: 600, border: "none", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", boxShadow: "0 0 30px rgba(59,130,246,0.25)" }}>
-              {loading ? "Analyzing..." : <><span>Run Analysis</span><ChevronRight size={16} /></>}
+              className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-sm sm:text-base flex items-center justify-center sm:justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition text-white"
+              style={{ background: loading ? "rgba(59,130,246,0.5)" : "linear-gradient(135deg, #3b82f6, #6366f1)", boxShadow: "0 0 30px rgba(59,130,246,0.25)" }}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <span>Run Analysis</span>
+                  <ChevronRight size={18} />
+                </>
+              )}
             </button>
           </div>
           {loading && <AnalysisLoader activeStep={loadingStep} />}
           {remainingTrials === 0 && !loading && (
-            <p style={{ marginTop: "16px", fontSize: "13px", color: "#ef4444" }}>
-              No trials remaining. <Link href="/dashboard/billing" style={{ color: "#3b82f6", textDecoration: "none" }}>Upgrade →</Link>
+            <p className="mt-4 text-sm text-red-500">
+              No trials remaining. <Link href="/dashboard/billing" className="text-blue-400 hover:text-blue-300 font-semibold">Upgrade →</Link>
             </p>
           )}
         </motion.div>
 
         {/* Reports Table */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "24px", overflow: "hidden", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
-          <div style={{ padding: "24px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          className="bg-[#111]/60 border border-[#1F2937] rounded-lg sm:rounded-2xl overflow-hidden backdrop-blur-xl hover:border-[#333] transition">
+          <div className="p-4 sm:p-6 border-b border-[#1F2937] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "4px" }}>Recent Reports</h2>
-              <p style={{ fontSize: "13px", color: "#475569" }}>{reports.length} total analyses</p>
+              <h2 className="text-lg sm:text-xl font-bold">Recent Reports</h2>
+              <p className="text-xs sm:text-sm text-[#475569] mt-1">{reports.length} total analyses</p>
             </div>
             {reports.length > 0 && (
               <button onClick={handleDeleteAll} disabled={deletingId === "all"}
-                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", padding: "8px 16px", borderRadius: "10px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Trash2 size={14} />
+                className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:bg-red-500/20 transition disabled:opacity-50">
+                <Trash2 size={16} />
                 {deletingId === "all" ? "Deleting..." : "Delete All"}
               </button>
             )}
           </div>
 
           {reports.length === 0 ? (
-            <div style={{ padding: "80px", textAlign: "center" }}>
-              <BarChart3 size={44} style={{ margin: "0 auto 16px", opacity: 0.1 }} />
-              <p style={{ fontSize: "15px", color: "#334155" }}>No reports yet. Analyze your first product above.</p>
+            <div className="py-16 sm:py-20 px-4 text-center">
+              <BarChart3 size={40} className="mx-auto mb-4 opacity-10" />
+              <p className="text-sm sm:text-base text-[#334155]">No reports yet. Analyze your first product above.</p>
             </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  {["Project", "Status", "Date", "Action"].map((h, i) => (
-                    <th key={i} style={{ padding: "14px 28px", textAlign: i === 3 ? "right" : "left", fontSize: "11px", color: "#334155", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((report, idx) => {
-                  const data = report.market_data as any;
-                  return (
-                    <motion.tr key={report.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.05 }}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                      <td style={{ padding: "18px 28px" }}>
-                        <p style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px", textTransform: "capitalize" }}>{report.product_name}</p>
-                        {data?.url && (
-                          <p style={{ fontSize: "12px", color: "#334155", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <ExternalLink size={11} />
-                            {data.url.replace(/^https?:\/\//, "").slice(0, 40)}
-                          </p>
-                        )}
-                      </td>
-                      <td style={{ padding: "18px 28px" }}>
-                        <span style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", color: "#10b981", padding: "5px 12px", borderRadius: "100px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                          <CheckCircle2 size={11} /> Complete
-                        </span>
-                      </td>
-                      <td style={{ padding: "18px 28px", fontSize: "13px", color: "#334155" }}>
-                        {new Date(report.created_at).toLocaleDateString()}
-                      </td>
-                      <td style={{ padding: "18px 28px", textAlign: "right" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px" }}>
-                          <Link href={`/dashboard/report/${report.id}`} style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)", color: "#60a5fa", padding: "7px 16px", borderRadius: "10px", fontSize: "13px", textDecoration: "none", fontWeight: 500 }}>View →</Link>
-                          <button onClick={() => handleDelete(report.id)} disabled={deletingId === report.id}
-                            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", padding: "7px 10px", borderRadius: "10px", cursor: "pointer" }}>
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#1F2937]">
+                    {["Project", "Status", "Date", "Action"].map((h, i) => (
+                      <th key={i} className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-semibold text-[#334155] uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((report, idx) => {
+                    const data = report.market_data as any;
+                    return (
+                      <motion.tr key={report.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.05 }}
+                        className="border-b border-[#0F1419] hover:bg-[#111]/40 transition">
+                        <td className="px-4 sm:px-6 py-4">
+                          <p className="text-xs sm:text-sm font-semibold truncate capitalize">{report.product_name}</p>
+                          {data?.url && (
+                            <p className="text-xs text-[#334155] flex items-center gap-2 mt-1 truncate">
+                              <ExternalLink size={12} className="flex-shrink-0" />
+                              <span className="truncate">{data.url.replace(/^https?:\/\//, "").slice(0, 40)}</span>
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 sm:px-6 py-4">
+                          <span className="inline-flex items-center gap-1 bg-green-500/10 border border-green-500/30 text-green-400 px-2 sm:px-3 py-1 rounded-full text-xs">
+                            <CheckCircle2 size={12} /> Complete
+                          </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-[#334155]">
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link href={`/dashboard/report/${report.id}`} className="text-xs sm:text-sm bg-blue-500/10 border border-blue-500/30 text-blue-400 px-2 sm:px-3 py-1 rounded-lg hover:bg-blue-500/20 transition">
+                              View →
+                            </Link>
+                            <button onClick={() => handleDelete(report.id)} disabled={deletingId === report.id}
+                              className="text-xs bg-red-500/10 border border-red-500/30 text-red-400 p-1 sm:p-2 rounded-lg hover:bg-red-500/20 transition disabled:opacity-50">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </motion.div>
       </main>
