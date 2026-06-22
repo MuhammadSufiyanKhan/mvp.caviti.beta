@@ -171,15 +171,15 @@ export default function LandingPage() {
 
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           style={{ fontSize: "clamp(44px, 8vw, 88px)", fontWeight: 900, lineHeight: 1.02, letterSpacing: "-3px", marginBottom: "28px" }}>
-          Discover Your<br />
+          FIND WHAT YOUR COMPETITORS' CUSTOMERS HATE <br />
           <span style={{ background: "linear-gradient(135deg, #60a5fa, #a78bfa, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            Market Gap
+             AND TURN IT INTO YOUR NEXT WINNING ANGLE
           </span>
         </motion.h1>
 
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           style={{ fontSize: "18px", color: "#475569", maxWidth: "520px", lineHeight: 1.8, marginBottom: "48px" }}>
-          AI-powered competitor analysis for ambitious founders. Find gaps your competitors missed using real market data.
+          Caviti analyzes thousands of customer reviews to uncover hidden product flaws, market opportunities, and ad ideas your competitors are missing.
         </motion.p>
 
         {/* Hero CTA (single button only) */}
